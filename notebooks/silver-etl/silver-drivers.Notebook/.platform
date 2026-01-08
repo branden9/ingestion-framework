@@ -1,11 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
-    "type": "Warehouse",
-    "displayName": "Silver"
+    "type": "Notebook",
+    "displayName": "silver-drivers",
+    "description": "New notebook"
   },
   "config": {
     "version": "2.0",
-    "logicalId": "0282e8af-73f2-a633-4ccd-3f4143efa72d"
+    "logicalId": "d2053c63-b3bd-9c12-4fed-d55dd13fdfeb"
   }
 }
