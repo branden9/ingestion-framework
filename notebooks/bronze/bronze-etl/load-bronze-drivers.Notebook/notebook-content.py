@@ -34,6 +34,23 @@ import os
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# CELL ********************
+
+# Check if the schema 'bronze' exists, and create it if not
+if not spark.catalog.databaseExists("bronze"):
+    spark.sql("CREATE SCHEMA bronze")
+    print("Schema 'bronze' created.")
+else:
+    print("Schema 'bronze' already exists.")
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # MARKDOWN ********************
 
 # **Load bronze schema from file data.**
@@ -130,6 +147,27 @@ elif file_ext == ".csv":
 else:
     raise ValueError(f"Unsupported file type: {file_ext}")
  
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Rename columns to remove invalid characters for Delta Lake
+def sanitize_column_names(df):
+    for col_name in df.columns:
+        sanitized_name = col_name.replace(" ", "_")  # Replace spaces with underscores
+        df = df.withColumnRenamed(col_name, sanitized_name)
+    return df
+
+# Sanitize column names
+df = sanitize_column_names(df)
+
 display(df)
 
 # METADATA ********************

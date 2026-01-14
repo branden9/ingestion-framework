@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "Predeployment-scripts"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e18c3ba5-754b-83df-4e58-3cfb872cc039"
+  }
+}
