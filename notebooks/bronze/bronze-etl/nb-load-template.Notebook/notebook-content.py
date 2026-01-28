@@ -23,7 +23,9 @@
 # CELL ********************
 
 from notebookutils import mssparkutils, notebook
-from pyspark.sql.functions import sha2, concat_ws, current_timestamp, lit, col
+from pyspark.sql.functions import sha2, concat_ws, current_timestamp, lit, col, count
+from pyspark.sql import functions 
+from pyspark.sql.window import Window
 from delta.tables import DeltaTable
 import os
 
@@ -46,7 +48,7 @@ source_type = "lakehouse"  # or files/warehouse
 source_storage_type = "Files" #Files or Tables
 source_subfolder = "taxi-raw"
 source_name = "medallion-drivers-active.csv"
-source_keys = "LicenseNumber"
+source_keys = "LicenseNumber, RowHash"
 
 # Target metadata 
 target_workspace_id = "26f84b3b-c936-4482-b883-db691ee83597"
@@ -107,20 +109,6 @@ display(delta_source)
 
 # CELL ********************
 
-keys = [key.strip() for key in source_keys.split(",")]
-merge_condition = " AND ".join([f"target.{key} = source.{key}" for key in keys])
-
-display(merge_condition)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 # Detect file type
 file_ext = os.path.splitext(source_path)[1].lower()
  
@@ -148,7 +136,7 @@ elif source_storage_type == "Tables":
 else:
     raise ValueError(f"Unsupported file type: {file_ext}")
  
-display(df)
+#display(df)
 
 # METADATA ********************
 
@@ -162,14 +150,14 @@ display(df)
 # Rename columns to remove invalid characters for Delta Lake
 def sanitize_column_names(df):
     for col_name in df.columns:
-        sanitized_name = col_name.replace(" ", "_")  # Replace spaces with underscores
+        sanitized_name = col_name.replace(" ", "")  # Replace spaces with underscores
         df = df.withColumnRenamed(col_name, sanitized_name)
     return df
 
 # Sanitize column names
 df = sanitize_column_names(df)
 
-display(df)
+#display(df)
 
 # METADATA ********************
 
@@ -180,12 +168,55 @@ display(df)
 
 # CELL ********************
 
-# Enrich with metadata
-df_enriched = df.withColumn("row_hash", sha2(concat_ws("||", *df.columns), 256)) \
-                .withColumn("loadtime", current_timestamp()) \
-                .withColumn("source", lit(os.path.basename(source_path)))
+keys = [key.strip() for key in source_keys.split(",")]
+merge_condition = " AND ".join([f"target.{key} = source.{key}" for key in keys])
 
-display(df_enriched)
+display(merge_condition)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Enrich with metadata, partition in order to keep dupes intact
+w = Window.partitionBy("LicenseNumber").orderBy(functions.col("LastDateUpdated").desc())
+
+df = df.withColumn("source", lit(os.path.basename(source_path))) \
+                .withColumn("rw", functions.row_number().over(w))
+
+
+# finally, create hash
+df = df.withColumn("RowHash", sha2(concat_ws("||", *df.columns), 256)) \
+                .withColumn("loadtime", current_timestamp())
+
+
+#display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# check if row_hash has generated more than 1 unique id
+dupes = (
+    df.groupBy("RowHash")
+      .count()
+      .filter(col("count") > 1)
+)
+
+if dupes.count() > 0:
+    print("fix dupes")
+else:
+    print("carry on")
+
 
 # METADATA ********************
 
@@ -215,11 +246,11 @@ if not path_exists:
 else:
     delta_table = DeltaTable.forPath(spark, target_path)
 
+    # for bronze load, we want to be insert only
     delta_table.alias("target").merge(
         df.alias("source"),
         merge_condition
-    ).whenMatchedUpdateAll() \
-     .whenNotMatchedInsertAll() \
+    ).whenNotMatchedInsertAll() \
      .execute()
 
     print("Data merged into existing table.")
@@ -228,5 +259,20 @@ else:
 
 # META {
 # META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# MAGIC %%sql   
+# MAGIC select 
+# MAGIC     *
+# MAGIC from drivers 
+# MAGIC where LicenseNumber = 680019
+
+# METADATA ********************
+
+# META {
+# META   "language": "sparksql",
 # META   "language_group": "synapse_pyspark"
 # META }

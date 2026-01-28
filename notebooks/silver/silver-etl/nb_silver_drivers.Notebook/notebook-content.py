@@ -187,7 +187,7 @@ display(df)
 # CELL ********************
 
 # Enrich with metadata
-df_enriched = df.withColumn("row_hash", sha2(concat_ws("||", *df.columns), 256)) \
+df_enriched = df.withColumn("silverHash", sha2(concat_ws("||", *df.columns), 256)) \
                 .withColumn("loadtime", current_timestamp()) \
                 .withColumn("source", lit(os.path.basename(source_path)))
 
