@@ -22,8 +22,8 @@
 
 # CELL ********************
 
-from notebookutils import mssparkutils
-from pyspark.sql.functions import sha2, concat_ws, current_timestamp, lit
+from notebookutils import mssparkutils, notebook
+from pyspark.sql.functions import sha2, concat_ws, current_timestamp, lit, col
 from delta.tables import DeltaTable
 import os
 
@@ -36,43 +36,25 @@ import os
 
 # CELL ********************
 
-# Check if the schema 'bronze' exists, and create it if not
-if not spark.catalog.databaseExists("bronze"):
-    spark.sql("CREATE SCHEMA bronze")
-    print("Schema 'bronze' created.")
-else:
-    print("Schema 'bronze' already exists.")
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# **Load bronze schema from file data.**
-
-# CELL ********************
+#structural preferences: if we want to add a schema prefix to our table name (ie:True = bronze_tablename, False = tablename)
+schema_parse = False #default to False
 
 # Source metadata
 source_workspace_id = "26f84b3b-c936-4482-b883-db691ee83597"
 source_lakehouse_id = "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0" #bronze lakehouse
 source_type = "lakehouse"  # or files/warehouse
-source_storage_type = "Files"
+source_storage_type = "Files" #Files or Tables
 source_subfolder = "taxi-raw"
 source_name = "medallion-drivers-active.csv"
 source_keys = "LicenseNumber"
 
 # Target metadata 
 target_workspace_id = "26f84b3b-c936-4482-b883-db691ee83597"
-target_lakehouse_id = "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0" #bronze lakehouse
+target_lakehouse_id = "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0" #silver lakehouse 307568c6-a5f2-4bd1-9b58-34f495d97fe8
 target_type = "lakehouse"  # or "warehouse"
 target_storage_type = "Tables"
 target_schema = "bronze"
-target_name = "Drivers"
+target_name = "drivers"
 
 # METADATA ********************
 
@@ -83,11 +65,23 @@ target_name = "Drivers"
 
 # CELL ********************
 
+# should be straignt forward
 source_path = f"abfss://{source_workspace_id}@onelake.dfs.fabric.microsoft.com/{source_lakehouse_id}/{source_storage_type}/{source_subfolder}/{source_name}"
-target_path = f"abfss://{target_workspace_id}@onelake.dfs.fabric.microsoft.com/{target_lakehouse_id}/{target_storage_type}/{target_schema}/{target_name}"
+
+# set dynamically
+if schema_parse is True:
+    target_path = f"abfss://{target_workspace_id}@onelake.dfs.fabric.microsoft.com/{target_lakehouse_id}/{target_storage_type}/{target_schema}_{target_name}"
+else:
+    target_path = f"abfss://{target_workspace_id}@onelake.dfs.fabric.microsoft.com/{target_lakehouse_id}/{target_storage_type}/{target_name}"
 
 
-## abfss://26f84b3b-c936-4482-b883-db691ee83597@onelake.dfs.fabric.microsoft.com/66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0/Files/taxi-raw/medallion-drivers-active.csv
+# set if source is table, use bellow for df lkp
+if source_storage_type == "Tables":
+    delta_source = f"{source_storage_type}/{source_name}"
+else:
+    delta_source = "Empty" # overkill?
+
+
 
 # METADATA ********************
 
@@ -100,6 +94,9 @@ target_path = f"abfss://{target_workspace_id}@onelake.dfs.fabric.microsoft.com/{
 
 display(source_path)
 display(target_path)
+display(delta_source)
+
+
 
 # METADATA ********************
 
@@ -143,6 +140,10 @@ if file_ext == ".parquet":
  
 elif file_ext == ".csv":
     df = spark.read.option("header", "true").option("inferSchema", "true").csv(source_path)
+## new logic for going between delta tables
+elif source_storage_type == "Tables":
+    df = spark.read.format("delta").load(delta_source)
+    print("Delta table source.")
  
 else:
     raise ValueError(f"Unsupported file type: {file_ext}")

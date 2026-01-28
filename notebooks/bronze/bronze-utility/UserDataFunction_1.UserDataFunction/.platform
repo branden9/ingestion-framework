@@ -1,11 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
-    "type": "Notebook",
-    "displayName": "bronze-drivers"
+    "type": "UserDataFunction",
+    "displayName": "UserDataFunction_1"
   },
   "config": {
     "version": "2.0",
-    "logicalId": "a17a32d0-80be-9206-4396-cf89d613d663"
+    "logicalId": "41e3983b-11a7-8554-4dbd-72a54d87ef5f"
   }
 }
