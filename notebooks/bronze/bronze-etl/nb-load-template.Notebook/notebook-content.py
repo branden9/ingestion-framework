@@ -136,7 +136,7 @@ elif source_storage_type == "Tables":
 else:
     raise ValueError(f"Unsupported file type: {file_ext}")
  
-#display(df)
+display(df)
 
 # METADATA ********************
 
@@ -157,7 +157,7 @@ def sanitize_column_names(df):
 # Sanitize column names
 df = sanitize_column_names(df)
 
-#display(df)
+display(df)
 
 # METADATA ********************
 
@@ -188,10 +188,12 @@ w = Window.partitionBy("LicenseNumber").orderBy(functions.col("LastDateUpdated")
 df = df.withColumn("source", lit(os.path.basename(source_path))) \
                 .withColumn("rw", functions.row_number().over(w))
 
+##We only want to hash over these columns
+cols = ["LicenseNumber", "rw"]
 
 # finally, create hash
-df = df.withColumn("RowHash", sha2(concat_ws("||", *df.columns), 256)) \
-                .withColumn("loadtime", current_timestamp())
+df = df.withColumn("RowHash", sha2(concat_ws("||", *[col(c) for c in cols]), 256))
+
 
 
 #display(df)

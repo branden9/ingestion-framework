@@ -14,6 +14,9 @@
 # META       "known_lakehouses": [
 # META         {
 # META           "id": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0"
+# META         },
+# META         {
+# META           "id": "307568c6-a5f2-4bd1-9b58-34f495d97fe8"
 # META         }
 # META       ]
 # META     }
@@ -24,6 +27,7 @@
 
 from notebookutils import mssparkutils, notebook
 from pyspark.sql.functions import sha2, concat_ws, current_timestamp, lit, col
+from pyspark.sql import functions as function
 from delta.tables import DeltaTable
 import os
 
@@ -187,11 +191,50 @@ display(df)
 # CELL ********************
 
 # Enrich with metadata
-df_enriched = df.withColumn("silverHash", sha2(concat_ws("||", *df.columns), 256)) \
-                .withColumn("loadtime", current_timestamp()) \
-                .withColumn("source", lit(os.path.basename(source_path)))
+df = df.withColumn("source", lit(os.path.basename(source_path))) \
+                .withColumn("IsActive", function.when(function.col("rw") == 1, function.lit(1)).otherwise(function.lit(0)))
 
-display(df_enriched)
+# get only columns that need to be moved to Silver
+df = df.select(
+    function.col("LicenseNumber"),
+    function.col("Name"),
+    function.col("Type"),
+    function.col("ExpirationDate"),
+    function.col("LastDateUpdated"),
+    function.col("LastTimeUpdated"),
+    function.col("source"),
+    function.col("rw"),
+    function.col("IsActive"),
+)
+
+df = df.withColumn("silverHash", sha2(concat_ws("||", df.LicenseNumber, df.rw), 256)) \
+                .withColumn("loadtime", current_timestamp()) 
+
+
+
+
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# check if row_hash has generated more than 1 unique id
+dupes = (
+    df.groupBy("silverHash")
+      .count()
+      .filter(col("count") > 1)
+)
+
+if dupes.count() > 0:
+    print("fix dupes")
+else:
+    print("carry on")
 
 # METADATA ********************
 
