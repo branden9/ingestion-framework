@@ -8,13 +8,10 @@
 # META   },
 # META   "dependencies": {
 # META     "lakehouse": {
-# META       "default_lakehouse": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0",
-# META       "default_lakehouse_name": "bronze",
+# META       "default_lakehouse": "307568c6-a5f2-4bd1-9b58-34f495d97fe8",
+# META       "default_lakehouse_name": "silver",
 # META       "default_lakehouse_workspace_id": "26f84b3b-c936-4482-b883-db691ee83597",
 # META       "known_lakehouses": [
-# META         {
-# META           "id": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0"
-# META         },
 # META         {
 # META           "id": "307568c6-a5f2-4bd1-9b58-34f495d97fe8"
 # META         }
@@ -51,7 +48,7 @@ source_storage_type = "Tables" #Files or Tables
 source_subfolder = "taxi-raw"
 source_schema = "bronze" #not an actual schema.. can act as one though through prefix if needed (use bronze, silver, gold)
 source_name = "drivers"
-source_keys = "LicenseNumber"
+source_keys = "LicenseNumber, SilverHash"
 
 # Target metadata 
 target_workspace_id = "26f84b3b-c936-4482-b883-db691ee83597"
@@ -152,7 +149,7 @@ elif file_ext == ".csv":
     df = spark.read.option("header", "true").option("inferSchema", "true").csv(source_path)
 ## new logic for going between delta tables
 elif source_storage_type == "Tables":
-    df = spark.read.format("delta").load(delta_source)
+    df = spark.read.format("delta").load(source_path)
     print("Delta table source.")
  
 else:
