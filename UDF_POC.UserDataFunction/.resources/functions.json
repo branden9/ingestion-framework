@@ -1,0 +1,182 @@
+{
+  "runtime": "PYTHON",
+  "functionsMetadata": [
+    {
+      "name": "get_variable_name",
+      "scriptFile": "function_app.py",
+      "bindings": [
+        {
+          "name": "req",
+          "type": "HttpTrigger",
+          "direction": "In",
+          "authLevel": "Anonymous",
+          "methods": [
+            "POST"
+          ],
+          "route": ""
+        },
+        {
+          "name": "varLib",
+          "type": "FabricItem",
+          "direction": "In",
+          "alias": "varlibrary",
+          "subType": "FabricVariablesClient",
+          "itemType": null,
+          "audienceType": null
+        }
+      ],
+      "fabricProperties": {
+        "fabricMetadataSchemaVersion": "1.1.0",
+        "fabricFunctionReturnType": "str",
+        "fabricFunctionParameters": [
+          {
+            "name": "workspaceid",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "srcLakehouse",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "sourceType",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "sourceStorageType",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "sourceSubfolder",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "sourceName",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "dstLakehouse",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "targetType",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "targetStorageType",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "targetSchema",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "targetName",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
+            "name": "schemaParse",
+            "dataType": "bool",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_masked_variable",
+      "scriptFile": "function_app.py",
+      "bindings": [
+        {
+          "name": "req",
+          "type": "HttpTrigger",
+          "direction": "In",
+          "authLevel": "Anonymous",
+          "methods": [
+            "POST"
+          ],
+          "route": ""
+        },
+        {
+          "name": "varLib",
+          "type": "FabricItem",
+          "direction": "In",
+          "alias": "varlibrary",
+          "subType": "FabricVariablesClient",
+          "itemType": null,
+          "audienceType": null
+        }
+      ],
+      "fabricProperties": {
+        "fabricMetadataSchemaVersion": "1.1.0",
+        "fabricFunctionReturnType": "str",
+        "fabricFunctionParameters": [
+          {
+            "name": "maskedVariable",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "dynamic_masked_variable",
+      "scriptFile": "function_app.py",
+      "bindings": [
+        {
+          "name": "req",
+          "type": "HttpTrigger",
+          "direction": "In",
+          "authLevel": "Anonymous",
+          "methods": [
+            "POST"
+          ],
+          "route": ""
+        },
+        {
+          "name": "varLib",
+          "type": "FabricItem",
+          "direction": "In",
+          "alias": "varlibrary",
+          "subType": "FabricVariablesClient",
+          "itemType": null,
+          "audienceType": null
+        }
+      ],
+      "fabricProperties": {
+        "fabricMetadataSchemaVersion": "1.1.0",
+        "fabricFunctionReturnType": "str",
+        "fabricFunctionParameters": [
+          {
+            "name": "variableName",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          }
+        ]
+      }
+    }
+  ]
+}

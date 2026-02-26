@@ -1,0 +1,41 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "bronze_lkh_id",
+      "note": "The bronze lakehouse id, used for building path variables.",
+      "type": "String",
+      "value": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0"
+    },
+    {
+      "name": "workspace_id",
+      "note": "The workspace id, used for building path variables.",
+      "type": "String",
+      "value": "26f84b3b-c936-4482-b883-db691ee83597"
+    },
+    {
+      "name": "silver_lkh_id",
+      "note": "The silver lakehouse id, used for building path variables.",
+      "type": "String",
+      "value": "307568c6-a5f2-4bd1-9b58-34f495d97fe8"
+    },
+    {
+      "name": "maskedValue",
+      "note": "",
+      "type": "String",
+      "value": "masked-fabric"
+    },
+    {
+      "name": "unmaskedValue",
+      "note": "",
+      "type": "String",
+      "value": "unmasked-fabric"
+    },
+    {
+      "name": "sensitiveValue",
+      "note": "",
+      "type": "String",
+      "value": "S3cret$!!"
+    }
+  ]
+}
