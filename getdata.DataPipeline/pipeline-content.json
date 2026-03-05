@@ -2,47 +2,177 @@
   "properties": {
     "activities": [
       {
-        "name": "Get Metadata",
         "type": "GetMetadata",
-        "dependsOn": [],
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureOutput": false,
-          "secureInput": false
-        },
         "typeProperties": {
-          "fieldList": [
-            "childItems"
-          ],
           "datasetSettings": {
-            "annotations": [],
             "type": "DelimitedText",
             "typeProperties": {
               "location": {
                 "type": "AzureBlobStorageLocation",
-                "container": "taxi-data"
+                "container": {
+                  "value": "@pipeline().parameters.containerName",
+                  "type": "Expression"
+                }
               },
               "columnDelimiter": ",",
+              "quoteChar": "\"",
               "escapeChar": "\\",
-              "firstRowAsHeader": true,
-              "quoteChar": "\""
+              "firstRowAsHeader": true
             },
             "schema": [],
             "externalReferences": {
               "connection": "4ccd9f2a-2607-41ab-8cd6-ed1fd64d4f08"
-            }
+            },
+            "annotations": []
           },
+          "fieldList": [
+            "childItems"
+          ],
           "storeSettings": {
             "type": "AzureBlobStorageReadSettings",
+            "recursive": true,
             "enablePartitionDiscovery": false
           },
           "formatSettings": {
             "type": "DelimitedTextReadSettings"
           }
-        }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Get Metadata",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@activity('Get Metadata').output.childItems",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "Copy",
+              "typeProperties": {
+                "source": {
+                  "type": "DelimitedTextSource",
+                  "formatSettings": {
+                    "type": "DelimitedTextReadSettings"
+                  },
+                  "storeSettings": {
+                    "type": "AzureBlobStorageReadSettings",
+                    "recursive": true,
+                    "enablePartitionDiscovery": false
+                  },
+                  "datasetSettings": {
+                    "type": "DelimitedText",
+                    "typeProperties": {
+                      "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "container": {
+                          "value": "@pipeline().parameters.containerName",
+                          "type": "Expression"
+                        },
+                        "fileName": {
+                          "value": "@item().name",
+                          "type": "Expression"
+                        }
+                      },
+                      "columnDelimiter": ",",
+                      "quoteChar": "\"",
+                      "escapeChar": "\\",
+                      "firstRowAsHeader": true
+                    },
+                    "schema": [],
+                    "externalReferences": {
+                      "connection": "4ccd9f2a-2607-41ab-8cd6-ed1fd64d4f08"
+                    },
+                    "annotations": []
+                  }
+                },
+                "sink": {
+                  "type": "DelimitedTextSink",
+                  "formatSettings": {
+                    "type": "DelimitedTextWriteSettings",
+                    "fileExtension": ".csv"
+                  },
+                  "storeSettings": {
+                    "type": "LakehouseWriteSettings"
+                  },
+                  "datasetSettings": {
+                    "type": "DelimitedText",
+                    "typeProperties": {
+                      "location": {
+                        "type": "LakehouseLocation",
+                        "folderPath": {
+                          "value": "@pipeline().parameters.containerName",
+                          "type": "Expression"
+                        }
+                      },
+                      "columnDelimiter": ",",
+                      "quoteChar": "\"",
+                      "escapeChar": "\\",
+                      "firstRowAsHeader": true
+                    },
+                    "schema": [],
+                    "linkedService": {
+                      "name": "bronze",
+                      "properties": {
+                        "type": "Lakehouse",
+                        "typeProperties": {
+                          "artifactId": "ab6cc7e0-62af-9d4d-4028-6dc966c3ae0f",
+                          "workspaceId": "00000000-0000-0000-0000-000000000000",
+                          "rootFolder": "Files"
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "annotations": []
+                  }
+                },
+                "translator": {
+                  "type": "TabularTranslator",
+                  "typeConversion": true,
+                  "typeConversionSettings": {
+                    "allowDataTruncation": true,
+                    "treatBooleanAsNumber": false
+                  }
+                },
+                "enableStaging": false
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Copy data1",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "ForEach1",
+        "dependsOn": [
+          {
+            "activity": "Get Metadata",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
       }
-    ]
+    ],
+    "parameters": {
+      "containerName": {
+        "type": "string",
+        "defaultValue": "retail-sales"
+      }
+    }
   }
 }

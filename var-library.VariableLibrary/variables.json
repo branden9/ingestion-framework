@@ -36,6 +36,12 @@
       "note": "",
       "type": "String",
       "value": "S3cret$!!"
+    },
+    {
+      "name": "KEY_VAULT_URL",
+      "note": "",
+      "type": "String",
+      "value": "https://kv-brandencecil.vault.azure.net/"
     }
   ]
 }

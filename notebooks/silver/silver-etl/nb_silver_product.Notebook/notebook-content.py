@@ -47,29 +47,32 @@ retrieve = path_function.get_variable_name(
     workspaceid="workspace_id", #variable name from library, will retrieve the stored value
     srcLakehouse="bronze_lkh_id", #variable name from library, will retrieve the stored value
     sourceType="lakehouse", #can be lakehouse, warehouse, files
-    sourceStorageType="Files", #can be files, Tables
+    sourceStorageType="Tables", #can be files, Tables
+    sourceSchema="bronze", #used if building more dynamic path
     sourceSubfolder="retail-sales", #subfolder if from files
-    sourceName="retail_sales_dataset.csv", #File or table name
-    dstLakehouse="bronze_lkh_id", #variable name from library, will retrieve the stored value
+    sourceName="retailSales", #File or table name
+    dstLakehouse="silver_lkh_id", #variable name from library, will retrieve the stored value
     targetType="lakehouse", #can be lakehouse, warehouse, files
     targetStorageType="Tables", #can be files, Tables
     targetSchema="bronze", #used if building more dynamic path
-    targetName="retailSales", #File or table name
+    targetName="product", #File or table name
     schemaParse=False #Default to false
 )
 
 # Create a dataframe off of the values returned from the func
-df = spark.createDataFrame([retrieve], schema=["srcpath", "dstpath", "deltapath"])
+df = spark.createDataFrame([retrieve], schema=["srcpath", "dstpath", "deltapath", "soureceStorageType"])
 
 # Now set params for re-useability
 source_path = df.select("srcpath").first()[0] #grab first to be safe
 target_path = df.select("dstpath").first()[0] #grab first to be safe
 deltapath = df.select("deltapath").first()[0] #grab first to be safe
+sourceStorageType= df.select("soureceStorageType").first()[0] #grab first to be safe
 
 # Display as parameter values in our notebook
 print(source_path)
 print(target_path)
 print(deltapath)
+print(sourceStorageType)
 
 # METADATA ********************
 
@@ -81,7 +84,7 @@ print(deltapath)
 # CELL ********************
 
 # Set the primary keys to use, if any
-source_keys = "bronzeHash"
+source_keys = "productHash"
 
 
 # METADATA ********************
@@ -113,8 +116,8 @@ if file_ext == ".parquet":
 elif file_ext == ".csv":
     df = spark.read.option("header", "true").option("inferSchema", "true").csv(source_path)
 ## new logic for going between delta tables
-elif source_storage_type == "Tables":
-    df = spark.read.format("delta").load(delta_source)
+elif sourceStorageType == "Tables":
+    df = spark.read.format("delta").load(deltapath)
     print("Delta table source.")
  
 else:
@@ -166,10 +169,18 @@ display(merge_condition)
 
 # CELL ********************
 
-# finally, create hash
-df = df.withColumn("bronzeHash", sha2(concat_ws("||", *df.columns), 256)) \
-                .withColumn("source", lit(os.path.basename(source_path))) \
-                .withColumn("ingest_timestamp", current_timestamp())
+# Create hash for silver layer
+df = df.withColumn("productHash", sha2(concat_ws("||", df.ProductCategory), 256))
+
+
+# Now get our distinct columns we want to load to this table
+distinct_columns = [
+    "ProductCategory"
+    , "productHash"
+    ]
+
+# Update df with just the columns from above list, get distinct
+df = df.select(distinct_columns).distinct()
 
 
 
@@ -186,7 +197,7 @@ display(df)
 
 # check if row_hash has generated more than 1 unique id
 dupes = (
-    df.groupBy("bronzeHash")
+    df.groupBy("productHash")
       .count()
       .filter(col("count") > 1)
 )
@@ -238,20 +249,5 @@ else:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-# MAGIC %%sql   
-# MAGIC select 
-# MAGIC     count(*)
-# MAGIC from retailSales 
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "sparksql",
 # META   "language_group": "synapse_pyspark"
 # META }

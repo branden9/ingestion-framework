@@ -112,3 +112,43 @@ print(retrieve)
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
+# MARKDOWN ********************
+
+# # 4. We can retrieve variables directly from the library as well if desired
+
+# CELL ********************
+
+variable_library = notebookutils.variableLibrary.getLibrary("var-library")
+variable = variable_library.getVariable("maskedValue")
+display(variable)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## 5. Retrieve a keyvault secret, this will maintain a full layer of secrecy, likely better than anything we could use a var library for
+
+# CELL ********************
+
+# Specify the resource we are calling
+path_function = notebookutils.udf.getFunctions("UDF_POC")
+
+# Pass in param values for the function to use
+kv_url = path_function.get_keyvault_secret(keyVaultUrl="KEY_VAULT_URL")
+
+# Store URL in var library, pass in here
+secret_Value = mssparkutils.credentials.getSecret(kv_url, 'test-secret')
+print(secret_Value)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }

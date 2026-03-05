@@ -2,6 +2,8 @@ import fabric.functions as fn
 import pandas as pd 
 
 
+
+
 udf = fn.UserDataFunctions()
 
 
@@ -15,6 +17,7 @@ def get_variable_name(
     sourceStorageType: str,
     sourceSubfolder: str,
     sourceName: str,
+    sourceSchema: str,
     dstLakehouse: str,
     targetType: str,
     targetStorageType: str,
@@ -36,8 +39,12 @@ def get_variable_name(
     #set the variable
     tolakehouse = dst[dstLakehouse]
 
-    # Set the full paths
-    source_path = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{fromlakehouse}/{sourceStorageType}/{sourceSubfolder}/{sourceName}"
+    # set dynamically
+    if sourceStorageType == "Tables":
+        if schemaParse is True:
+            source_path = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{fromlakehouse}/{sourceStorageType}/{sourceSchema}_{sourceName}"
+        else:
+            source_path = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{fromlakehouse}/{sourceStorageType}/{sourceName}"
 
 
     # set dynamically
@@ -52,7 +59,7 @@ def get_variable_name(
     else:
         delta_source = "Empty" # overkill?
 
-    return source_path, target_path, delta_source
+    return source_path, target_path, delta_source, sourceStorageType
 
 
 # Connect to a variable library, return a variable but mask the value
@@ -96,6 +103,24 @@ def dynamic_masked_variable(
 
     # Return the variable, masked or not
     return myvariable
+
+
+
+# Connect to a variable library, return a variable and mask the value based on if the variable name is in a list of variables to keep hidden
+@udf.connection(argName="varLib", alias="varlibrary")
+@udf.function()
+def get_keyvault_url(
+    varLib: fn.FabricVariablesClient,
+    keyVaultUrl: str = "KEY_VAULT_URL") -> str: ##if you are going to pass in default values, the parameter needs to be at the end of the list
+
+    # Retrieve the var library
+    getVariable = varLib.getVariables()
+
+    # Select the url we need
+    get_kv_url = getVariable[keyVaultUrl]
+
+    # Return the variable, masked or not
+    return get_kv_url
 
 
 

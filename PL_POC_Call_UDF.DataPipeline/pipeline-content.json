@@ -1,0 +1,67 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "set_var-library_value",
+          "value": {
+            "value": "@pipeline().libraryVariables.varlibrary_maskedValue",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Repurpose variable for PL use",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "34448ffa-335a-8359-4097-2bdb8c0b1fc2",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "external_parameter": {
+              "value": {
+                "value": "@pipeline().parameters.Pipeline_external_parameter",
+                "type": "Expression"
+              },
+              "type": "int"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Execute Notebook",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "Pipeline_external_parameter": {
+        "type": "int",
+        "defaultValue": 1
+      }
+    },
+    "libraryVariables": {
+      "varlibrary_maskedValue": {
+        "type": "String",
+        "variableName": "maskedValue",
+        "libraryName": "var-library"
+      }
+    },
+    "variables": {
+      "set_var-library_value": {
+        "type": "String"
+      }
+    }
+  }
+}

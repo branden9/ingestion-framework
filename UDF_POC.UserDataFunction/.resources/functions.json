@@ -66,6 +66,12 @@
             "defaultValue": null
           },
           {
+            "name": "sourceSchema",
+            "dataType": "str",
+            "hasDefaultValue": false,
+            "defaultValue": null
+          },
+          {
             "name": "dstLakehouse",
             "dataType": "str",
             "hasDefaultValue": false,
@@ -174,6 +180,43 @@
             "dataType": "str",
             "hasDefaultValue": false,
             "defaultValue": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_keyvault_url",
+      "scriptFile": "function_app.py",
+      "bindings": [
+        {
+          "name": "req",
+          "type": "HttpTrigger",
+          "direction": "In",
+          "authLevel": "Anonymous",
+          "methods": [
+            "POST"
+          ],
+          "route": ""
+        },
+        {
+          "name": "varLib",
+          "type": "FabricItem",
+          "direction": "In",
+          "alias": "varlibrary",
+          "subType": "FabricVariablesClient",
+          "itemType": null,
+          "audienceType": null
+        }
+      ],
+      "fabricProperties": {
+        "fabricMetadataSchemaVersion": "1.1.0",
+        "fabricFunctionReturnType": "str",
+        "fabricFunctionParameters": [
+          {
+            "name": "keyVaultUrl",
+            "dataType": "str",
+            "hasDefaultValue": true,
+            "defaultValue": "KEY_VAULT_URL"
           }
         ]
       }
