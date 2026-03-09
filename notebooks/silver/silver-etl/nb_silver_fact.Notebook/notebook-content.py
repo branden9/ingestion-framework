@@ -55,7 +55,7 @@ retrieve = path_function.get_variable_name(
     targetType="lakehouse", #can be lakehouse, warehouse, files
     targetStorageType="Tables", #can be files, Tables
     targetSchema="bronze", #used if building more dynamic path
-    targetName="customer", #File or table name
+    targetName="product", #File or table name
     schemaParse=False #Default to false
 )
 
@@ -84,7 +84,7 @@ print(sourceStorageType)
 # CELL ********************
 
 # Set the primary keys to use, if any
-source_keys = "customerHash"
+source_keys = "productHash"
 
 
 # METADATA ********************
@@ -170,19 +170,19 @@ display(merge_condition)
 # CELL ********************
 
 # Create hash for silver layer
-df = df.withColumn("customerHash", sha2(concat_ws("||", df.CustomerID), 256))
+df = df.withColumn("productHash", sha2(concat_ws("||", df.ProductCategory), 256))
 
 
 # Now get our distinct columns we want to load to this table
 distinct_columns = [
-    "CustomerID"
-    , "Gender"
-    , "Age"
-    , "customerHash"
+    "ProductCategory"
+    , "productHash"
     ]
 
 # Update df with just the columns from above list, get distinct
 df = df.select(distinct_columns).distinct()
+
+
 
 display(df)
 
@@ -203,10 +203,8 @@ df.createOrReplaceTempView("source_view")
 
 df = spark.sql("""
     SELECT 
-        CustomerId 
-        ,Gender 
-        ,Age 
-        ,customerHash
+        ProductCategory 
+        ,productHash
     FROM source_view
                 """)
 
@@ -223,7 +221,7 @@ display(df)
 
 # check if row_hash has generated more than 1 unique id
 dupes = (
-    df.groupBy("customerHash")
+    df.groupBy("productHash")
       .count()
       .filter(col("count") > 1)
 )

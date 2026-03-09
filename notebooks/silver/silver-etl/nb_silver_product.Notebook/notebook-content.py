@@ -55,7 +55,7 @@ retrieve = path_function.get_variable_name(
     targetType="lakehouse", #can be lakehouse, warehouse, files
     targetStorageType="Tables", #can be files, Tables
     targetSchema="bronze", #used if building more dynamic path
-    targetName="product", #File or table name
+    targetName="factTransaction", #File or table name
     schemaParse=False #Default to false
 )
 
@@ -84,7 +84,7 @@ print(sourceStorageType)
 # CELL ********************
 
 # Set the primary keys to use, if any
-source_keys = "productHash"
+source_keys = "transactionHash"
 
 
 # METADATA ********************
@@ -170,13 +170,21 @@ display(merge_condition)
 # CELL ********************
 
 # Create hash for silver layer
-df = df.withColumn("productHash", sha2(concat_ws("||", df.ProductCategory), 256))
+df = df.withColumn("transactionHash", sha2(concat_ws("||", df.TransactionID), 256)) \
+        .withColumn("dateHash", sha2(concat_ws("||", df.Date), 256)) \
+        .withColumn("customerHash", sha2(concat_ws("||", df.CustomerID), 256)) \
+        .withColumn("productHash", sha2(concat_ws("||", df.ProductCategory), 256))
 
 
 # Now get our distinct columns we want to load to this table
 distinct_columns = [
-    "ProductCategory"
+    "transactionHash"
+    , "dateHash"
+    , "customerHash"
     , "productHash"
+    , "Quantity"
+    , "PriceperUnit"
+    , "TotalAmount"
     ]
 
 # Update df with just the columns from above list, get distinct
@@ -195,9 +203,38 @@ display(df)
 
 # CELL ********************
 
+# Correct SQL syntax for aliasing columns in Spark SQL uses 'AS', not '='
+# Also, remove square brackets from column names!
+
+# Create the temp view if not already created (uncomment if needed):
+df.createOrReplaceTempView("source_view")
+
+df = spark.sql("""
+    SELECT 
+        transactionHash 
+        ,dateHash 
+        ,customerHash
+        ,productHash 
+        ,Quantity 
+        ,PriceperUnit as PricePerUnit
+        ,TotalAmount 
+    FROM source_view
+                """)
+
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 # check if row_hash has generated more than 1 unique id
 dupes = (
-    df.groupBy("productHash")
+    df.groupBy("transactionHash")
       .count()
       .filter(col("count") > 1)
 )
@@ -240,7 +277,9 @@ else:
     delta_table.alias("target").merge(
         df.alias("source"),
         merge_condition
-    ).whenNotMatchedInsertAll() \
+    ).withSchemaEvolution() \
+     .whenNotMatchedInsertAll() \
+     .whenMatchedUpdateAll() \
      .execute()
 
     print("Data merged into existing table.")

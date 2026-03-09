@@ -179,10 +179,52 @@ distinct_columns = [
     , "dateHash"
     ]
 
+
 # Update df with just the columns from above list, get distinct
 df = df.select(distinct_columns).distinct()
 
 
+
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Correct SQL syntax for aliasing columns in Spark SQL uses 'AS', not '='
+# Also, remove square brackets from column names!
+
+# Create the temp view if not already created (uncomment if needed):
+df.createOrReplaceTempView("source_view")
+
+df = spark.sql("""
+    SELECT 
+        Date
+        ,YEAR(Date) AS Year
+        ,MONTH(Date) AS Month
+        ,WEEKOFYEAR(Date) AS Week
+        ,DAYOFWEEK(Date) AS DayOfWeek
+        ,DAY(Date) AS Day
+        ,QUARTER(Date) AS Quarter
+        ,DAYOFMONTH(Date) AS DayOfMonth
+        ,DAYOFYEAR(Date) AS DayOfYear
+        ,CASE WHEN DayOfWeek IN (1,7) THEN 'Weekend' ELSE 'Weekday' END AS DayType
+        ,CASE WHEN DayOfWeek(Date) = 1 THEN 'Sunday'
+              WHEN DayOfWeek(Date) = 2 THEN 'Monday'
+              WHEN DayOfWeek(Date) = 3 THEN 'Tuesday'
+              WHEN DayOfWeek(Date) = 4 THEN 'Wednesday'
+              WHEN DayOfWeek(Date) = 5 THEN 'Thursday'
+              WHEN DayOfWeek(Date) = 6 THEN 'Friday'
+              WHEN DayOfWeek(Date) = 7 THEN 'Saturday'
+         END AS DayName
+         ,dateHash
+    FROM source_view
+                """)
 
 display(df)
 
@@ -217,17 +259,6 @@ else:
 
 # CELL ********************
 
-df = spark.sql("select * from  ")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 path_exists = mssparkutils.fs.exists(target_path)
 
 print(f"Path exists: {path_exists}")
@@ -251,7 +282,9 @@ else:
     delta_table.alias("target").merge(
         df.alias("source"),
         merge_condition
-    ).whenNotMatchedInsertAll() \
+    ).withSchemaEvolution() \
+     .whenNotMatchedInsertAll() \
+     .whenMatchedUpdateAll() \
      .execute()
 
     print("Data merged into existing table.")
