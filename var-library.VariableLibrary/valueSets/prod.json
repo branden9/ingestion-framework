@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/valueSet/1.0.0/schema.json",
+  "name": "prod",
+  "variableOverrides": [
+    {
+      "name": "maskedValue",
+      "value": "masked-fabric-prod"
+    },
+    {
+      "name": "unmaskedValue",
+      "value": "unmasked-fabric-prod"
+    },
+    {
+      "name": "sensitiveValue",
+      "value": "S3cret$!!-prod"
+    }
+  ]
+}

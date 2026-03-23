@@ -22,6 +22,11 @@
       "isPublicEndpointEnabled": true
     },
     {
+      "name": "get_blob_path",
+      "description": "",
+      "isPublicEndpointEnabled": true
+    },
+    {
       "name": "get_keyvault_url",
       "description": "",
       "isPublicEndpointEnabled": true

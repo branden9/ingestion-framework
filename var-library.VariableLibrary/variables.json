@@ -42,6 +42,12 @@
       "note": "",
       "type": "String",
       "value": "https://kv-brandencecil.vault.azure.net/"
+    },
+    {
+      "name": "blob_url",
+      "note": "",
+      "type": "String",
+      "value": "https://storageacctbc.blob.core.windows.net"
     }
   ]
 }

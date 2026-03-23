@@ -39,40 +39,22 @@ import os
 
 # CELL ********************
 
-# Specify the resource we are calling
-path_function = notebookutils.udf.getFunctions("UDF_POC")
+source_path = "abfss://26f84b3b-c936-4482-b883-db691ee83597@onelake.dfs.fabric.microsoft.com/307568c6-a5f2-4bd1-9b58-34f495d97fe8/Tables/dbo/bikeLanding"
+deltapath = "Tables/bikeLanding"
 
-# Pass in param values for the function to use
-retrieve = path_function.get_variable_name(
-    workspaceid="workspace_id", #variable name from library, will retrieve the stored value
-    srcLakehouse="bronze_lkh_id", #variable name from library, will retrieve the stored value
-    sourceType="lakehouse", #can be lakehouse, warehouse, files
-    sourceStorageType="Files", #can be files, Tables
-    sourceSchema="bronze", #used if building more dynamic path
-    sourceSubfolder="retail-sales", #subfolder if from files
-    sourceName="retail_sales_dataset.csv", #File or table name
-    dstLakehouse="bronze_lkh_id", #variable name from library, will retrieve the stored value
-    targetType="lakehouse", #can be lakehouse, warehouse, files
-    targetStorageType="Tables", #can be files, Tables
-    targetSchema="bronze", #used if building more dynamic path
-    targetName="retailSales", #File or table name
-    schemaParse=False #Default to false
-)
 
-# Create a dataframe off of the values returned from the func
-df = spark.createDataFrame([retrieve], schema=["srcpath", "dstpath", "deltapath", "soureceStorageType"])
+# METADATA ********************
 
-# Now set params for re-useability
-source_path = df.select("srcpath").first()[0] #grab first to be safe
-target_path = df.select("dstpath").first()[0] #grab first to be safe
-deltapath = df.select("deltapath").first()[0] #grab first to be safe
-sourceStorageType= df.select("soureceStorageType").first()[0] #grab first to be safe
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
 
-# Display as parameter values in our notebook
-print(source_path)
-print(target_path)
-print(deltapath)
-print(sourceStorageType)
+# CELL ********************
+
+df = spark.read.format("delta").load(source_path)
+
+display(df)
 
 # METADATA ********************
 
@@ -84,7 +66,7 @@ print(sourceStorageType)
 # CELL ********************
 
 # Set the primary keys to use, if any
-source_keys = "bronzeHash"
+source_keys = "dateHash"
 
 
 # METADATA ********************
@@ -116,8 +98,8 @@ if file_ext == ".parquet":
 elif file_ext == ".csv":
     df = spark.read.option("header", "true").option("inferSchema", "true").csv(source_path)
 ## new logic for going between delta tables
-elif source_storage_type == "Tables":
-    df = spark.read.format("delta").load(delta_source)
+elif sourceStorageType == "Tables":
+    df = spark.read.format("delta").load(deltapath)
     print("Delta table source.")
  
 else:
@@ -169,10 +151,19 @@ display(merge_condition)
 
 # CELL ********************
 
-# finally, create hash
-df = df.withColumn("bronzeHash", sha2(concat_ws("||", *df.columns), 256)) \
-                .withColumn("source", lit(os.path.basename(source_path))) \
-                .withColumn("ingest_timestamp", current_timestamp())
+# Create hash for silver layer
+df = df.withColumn("dateHash", sha2(concat_ws("||", df.Date), 256)) 
+
+
+# Now get our distinct columns we want to load to this table
+distinct_columns = [
+    "Date"
+    , "dateHash"
+    ]
+
+
+# Update df with just the columns from above list, get distinct
+df = df.select(distinct_columns).distinct()
 
 
 
@@ -187,9 +178,50 @@ display(df)
 
 # CELL ********************
 
+# Correct SQL syntax for aliasing columns in Spark SQL uses 'AS', not '='
+# Also, remove square brackets from column names!
+
+# Create the temp view if not already created (uncomment if needed):
+df.createOrReplaceTempView("source_view")
+
+df = spark.sql("""
+    SELECT 
+        Date
+        ,YEAR(Date) AS Year
+        ,MONTH(Date) AS Month
+        ,WEEKOFYEAR(Date) AS Week
+        ,DAYOFWEEK(Date) AS DayOfWeek
+        ,DAY(Date) AS Day
+        ,QUARTER(Date) AS Quarter
+        ,DAYOFMONTH(Date) AS DayOfMonth
+        ,DAYOFYEAR(Date) AS DayOfYear
+        ,CASE WHEN DayOfWeek IN (1,7) THEN 'Weekend' ELSE 'Weekday' END AS DayType
+        ,CASE WHEN DayOfWeek(Date) = 1 THEN 'Sunday'
+              WHEN DayOfWeek(Date) = 2 THEN 'Monday'
+              WHEN DayOfWeek(Date) = 3 THEN 'Tuesday'
+              WHEN DayOfWeek(Date) = 4 THEN 'Wednesday'
+              WHEN DayOfWeek(Date) = 5 THEN 'Thursday'
+              WHEN DayOfWeek(Date) = 6 THEN 'Friday'
+              WHEN DayOfWeek(Date) = 7 THEN 'Saturday'
+         END AS DayName
+         ,dateHash
+    FROM source_view
+                """)
+
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 # check if row_hash has generated more than 1 unique id
 dupes = (
-    df.groupBy("bronzeHash")
+    df.groupBy("dateHash")
       .count()
       .filter(col("count") > 1)
 )
@@ -232,7 +264,9 @@ else:
     delta_table.alias("target").merge(
         df.alias("source"),
         merge_condition
-    ).whenNotMatchedInsertAll() \
+    ).withSchemaEvolution() \
+     .whenNotMatchedInsertAll() \
+     .whenMatchedUpdateAll() \
      .execute()
 
     print("Data merged into existing table.")
@@ -241,20 +275,5 @@ else:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-# MAGIC %%sql   
-# MAGIC select 
-# MAGIC     count(*)
-# MAGIC from retailSales 
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "sparksql",
 # META   "language_group": "synapse_pyspark"
 # META }
