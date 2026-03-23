@@ -5,7 +5,7 @@
       "name": "bronze_lkh_id",
       "note": "The bronze lakehouse id, used for building path variables.",
       "type": "String",
-      "value": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0"
+      "value": "dummy"
     },
     {
       "name": "workspace_id",

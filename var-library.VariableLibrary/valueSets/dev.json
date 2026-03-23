@@ -13,6 +13,18 @@
     {
       "name": "sensitiveValue",
       "value": "S3cret$!!-dev"
+    },
+    {
+      "name": "bronze_lkh_id",
+      "value": "66c3ae0f-6dc9-4028-9d4d-62afab6cc7e0"
+    },
+    {
+      "name": "workspace_id",
+      "value": "26f84b3b-c936-4482-b883-db691ee83597"
+    },
+    {
+      "name": "silver_lkh_id",
+      "value": "307568c6-a5f2-4bd1-9b58-34f495d97fe8"
     }
   ]
 }
