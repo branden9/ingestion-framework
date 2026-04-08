@@ -23,7 +23,7 @@ from pyspark.sql.functions import substring
 
 # MARKDOWN ********************
 
-# ## 1. Call the first UDF, this will generate paths and return them to us to use as a parameter in the notebook
+# ## 1. Call the UDF to return a specified variable
 
 # CELL ********************
 
@@ -31,93 +31,14 @@ from pyspark.sql.functions import substring
 path_function = notebookutils.udf.getFunctions("UDF_POC")
 
 # Pass in param values for the function to use
-retrieve = path_function.get_variable_name(
-    workspaceid="workspace_id", #variable name from library, will retrieve the stored value
-    srcLakehouse="bronze_lkh_id", #variable name from library, will retrieve the stored value
-    sourceType="lakehouse", #can be lakehouse, warehouse, files
-    sourceStorageType="Files", #can be files, Tables
-    sourceSubfolder="taxi-raw", #subfolder if from files
-    sourceName="medallion-drivers-active.csv", #File or table name
-    sourceSchema="bronze", #used if building more dynamic path
-    dstLakehouse="silver_lkh_id", #variable name from library, will retrieve the stored value
-    targetType="lakehouse", #can be lakehouse, warehouse, files
-    targetStorageType="Tables", #can be files, Tables
-    targetSchema="bronze", #used if building more dynamic path
-    targetName="mytable", #File or table name
-    schemaParse=False #Default to false
-)
-
-# Create a dataframe off of the values returned from the func
-df = spark.createDataFrame([retrieve], schema=["srcpath", "dstpath", "deltapath", "sourceStorageType"])
-
-# Now set params for re-useability
-source_path = df.select("srcpath").first()[0] #grab first to be safe
-destination_path = df.select("dstpath").first()[0] #grab first to be safe
-deltapath = df.select("deltapath").first()[0] #grab first to be safe
-storageType = df.select("sourceStorageType").first()[0] #grab first to be safe
-
-# Display as parameter values in our notebook
-print(source_path)
-print(destination_path)
-print(deltapath)
-print(storageType)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# ## 2. Call the second UDF, this will return a variable to us from the Var library but it will be masked.
-
-# CELL ********************
-
-# Specify the resource we are calling
-path_function = notebookutils.udf.getFunctions("UDF_POC")
-
-# Pass in param values for the function to use
-retrieve = path_function.get_masked_variable(
-    maskedVariable="maskedValue" #variable name from library, will retrieve stored value
-)
-
-print(retrieve)
-
-# The problem here is, if we mask, the actual string is masked, which makes this rather worthless
-if retrieve == "masked-fabric":
-    print("secret found")
-else:
-    print("secret hidden")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# MARKDOWN ********************
-
-# ## 3. Call the third UDF, this will return a variabl to us from the Var library but it will be masked if the variable is in the masked_Variable list
-
-# CELL ********************
-
-# Specify the resource we are calling
-path_function = notebookutils.udf.getFunctions("UDF_POC")
-
-# Pass in param values for the function to use
-retrieve = path_function.dynamic_masked_variable(
-    variableName="unmaskedValue" #variable name from library, will retrieve stored value
+retrieve = path_function.get_variable(
+    variableName="sensitiveValue" #get variableName from the var-library
 )
 
 print(retrieve)
 
 
 
-
-
 # METADATA ********************
 
 # META {
@@ -127,12 +48,12 @@ print(retrieve)
 
 # MARKDOWN ********************
 
-# ## 4. We can retrieve variables directly from the library as well if desired
+# ## 2. We can retrieve variables directly from the library as well if desired
 
 # CELL ********************
 
 variable_library = notebookutils.variableLibrary.getLibrary("var-library")
-variable = variable_library.getVariable("maskedValue")
+variable = variable_library.getVariable("sensitiveValue")
 display(variable)
 
 # METADATA ********************
@@ -144,7 +65,7 @@ display(variable)
 
 # MARKDOWN ********************
 
-# ## 5. Retrieve a keyvault secret, this will maintain a full layer of secrecy, likely better than anything we could use a var library for
+# ## 3. Retrieve a keyvault secret, this will maintain a full layer of secrecy, likely better than anything we could use a var library for
 
 # CELL ********************
 
@@ -159,17 +80,13 @@ secret_Value = mssparkutils.credentials.getSecret(kv_url, 'test-secret')
 
 # Print to show the [REDACTED] value
 print(secret_Value)
-
+display(secret_Value)
 
 # Interesting test case...
 if secret_Value == "S3crets!":
     print("secret found")
 else:
     print("secret kept secret")
-
-# Once done, erase
-#del secret_Value ##physical removal
-
 
 
 # METADATA ********************

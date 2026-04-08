@@ -48,6 +48,12 @@
       "note": "",
       "type": "String",
       "value": "https://storageacctbc.blob.core.windows.net"
+    },
+    {
+      "name": "new_var",
+      "note": "",
+      "type": "String",
+      "value": "dev"
     }
   ]
 }

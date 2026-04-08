@@ -17,11 +17,6 @@
   ],
   "functions": [
     {
-      "name": "dynamic_masked_variable",
-      "description": "",
-      "isPublicEndpointEnabled": true
-    },
-    {
       "name": "get_blob_path",
       "description": "",
       "isPublicEndpointEnabled": true
@@ -32,7 +27,7 @@
       "isPublicEndpointEnabled": true
     },
     {
-      "name": "get_masked_variable",
+      "name": "get_variable",
       "description": "",
       "isPublicEndpointEnabled": true
     },

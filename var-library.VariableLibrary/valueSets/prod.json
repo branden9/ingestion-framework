@@ -13,6 +13,10 @@
     {
       "name": "sensitiveValue",
       "value": "S3cret$!!-prod"
+    },
+    {
+      "name": "new_var",
+      "value": "prod"
     }
   ]
 }

@@ -13,6 +13,22 @@
     {
       "name": "sensitiveValue",
       "value": "S3cret$!!-test"
+    },
+    {
+      "name": "bronze_lkh_id",
+      "value": "my-bronze-lkh-id-test"
+    },
+    {
+      "name": "workspace_id",
+      "value": "my-workspace-id-test"
+    },
+    {
+      "name": "silver_lkh_id",
+      "value": "my-silver-lkh-id-test"
+    },
+    {
+      "name": "new_var",
+      "value": "test"
     }
   ]
 }
